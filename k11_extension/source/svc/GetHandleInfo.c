@@ -24,51 +24,39 @@
 *         reasonable ways as different from the original version.
 */
 
-#include <3ds.h>
-#include "fmt.h"
-#include "menus/n3ds.h"
+#include "svc/GetThreadInfo.h"
 #include "memory.h"
-#include "menu.h"
 
-static char clkRateBuf[128 + 1];
-
-Menu N3DSMenu = {
-    "New 3DS menu",
-    .nbItems = 2,
+Result GetHandleInfoHook(s64 *out, Handle handle, u32 type)
+{
+    if(type == 0x10000) // KDebug and KProcess: get context ID
     {
-        { "Enable L2 cache", METHOD, .method = &N3DSMenu_EnableDisableL2Cache },
-        { clkRateBuf, METHOD, .method = &N3DSMenu_ChangeClockRate }
+        KProcessHwInfo *hwInfo;
+        KProcessHandleTable *handleTable = handleTableOfProcess(currentCoreContext->objectContext.currentProcess);
+        KAutoObject *obj;
+        if(handle == CUR_PROCESS_HANDLE)
+        {
+            obj = (KAutoObject *)(currentCoreContext->objectContext.currentProcess);
+            KAutoObject__AddReference(obj);
+        }
+        else
+            obj = KProcessHandleTable__ToKAutoObject(handleTable, handle);
+        
+        if(obj == NULL)
+            return 0xD8E007F7;
+
+        if(strcmp(classNameOfAutoObject(obj), "KDebug") == 0)
+            hwInfo = hwInfoOfProcess(((KDebug *)obj)->owner);
+        else if(strcmp(classNameOfAutoObject(obj), "KProcess") == 0)
+            hwInfo = hwInfoOfProcess((KProcess *)obj);
+        else
+            hwInfo = NULL;
+
+        *out = hwInfo != NULL ? KPROCESSHWINFO_GET_RVALUE(hwInfo, contextId) : -1;
+
+        obj->vtable->DecrementReferenceCount(obj);
+        return 0;
     }
-};
-
-static s64 clkRate = 0, higherClkRate = 0, L2CacheEnabled = 0;
-
-void N3DSMenu_UpdateStatus(void)
-{
-    svcGetSystemInfo(&clkRate, 0x10001, 0);
-    svcGetSystemInfo(&higherClkRate, 0x10001, 1);
-    svcGetSystemInfo(&L2CacheEnabled, 0x10001, 2);
-
-    N3DSMenu.items[0].title = L2CacheEnabled ? "Disable L2 cache" : "Enable L2 cache";
-    sprintf(clkRateBuf, "Set clock rate to %uMHz", clkRate != 268 ? 268 : (u32)higherClkRate);
-}
-
-void N3DSMenu_ChangeClockRate(void)
-{
-    N3DSMenu_UpdateStatus();
-
-    s64 newBitMask = (L2CacheEnabled << 1) | ((clkRate != 268 ? 1 : 0) ^ 1);
-    svcKernelSetState(10, (u32)newBitMask);
-
-    N3DSMenu_UpdateStatus();
-}
-
-void N3DSMenu_EnableDisableL2Cache(void)
-{
-    N3DSMenu_UpdateStatus();
-
-    s64 newBitMask = ((L2CacheEnabled ^ 1) << 1) | (clkRate != 268 ? 1 : 0);
-    svcKernelSetState(10, (u32)newBitMask);
-
-    N3DSMenu_UpdateStatus();
+    else
+        return GetHandleInfo(out, handle, type);
 }

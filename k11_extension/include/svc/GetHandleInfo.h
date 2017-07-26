@@ -26,12 +26,9 @@
 
 #pragma once
 
-#include "gdb.h"
+#include "utils.h"
+#include "kernel.h"
+#include "svc.h"
 
-int GDB_HandleReadQuery(GDBContext *ctx);
-int GDB_HandleWriteQuery(GDBContext *ctx);
-
-GDB_DECLARE_QUERY_HANDLER(Supported);
-GDB_DECLARE_QUERY_HANDLER(StartNoAckMode);
-GDB_DECLARE_QUERY_HANDLER(Attached);
-GDB_DECLARE_QUERY_HANDLER(CatchSyscalls);
+Result GetHandleInfoHookWrapper(u32 dummy, Handle handle, u32 type);
+Result GetHandleInfoHook(s64 *out, Handle handle, u32 type);
