@@ -1,9 +1,13 @@
 # Luma3DS-H
 *Noob-proof (N)3DS "Custom Firmware"*
 
+## NOTICE
+**Luma3DS-H** has been discontinued because of a lack of hardware to test on
+if you are willing to continue development open a issue
+
 ## What it is
 
-**Luma3DS-H** is a fork of [**Luma3DS**](https://github.com/AuroraWright/Luma3DS) that aims to be as hidden as possible
+**Luma3DS-H** is a fork of [**Luma3DS**](https://github.com/AuroraWright/Luma3DS) that aims to be as undetectable to the naked eye as possible
 
 
 ## What\'s the difference ?
